@@ -1,4 +1,5 @@
 venv
 __pycache__
+.env
 memoria.db
 conhecimento.db
