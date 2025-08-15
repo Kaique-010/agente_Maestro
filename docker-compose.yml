@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  aprendiz:
+    build: .
+    container_name: aprendiz_oraculo
+    ports:
+      - '8010:8010'
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./dados:/app/dados
