@@ -7,6 +7,7 @@ class No:
     
     def ligar(self, no):
         self.proximos.append(no)
+        return self
 
 
     def executar(self, estado):

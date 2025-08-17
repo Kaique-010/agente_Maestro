@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente Maestro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a, #111111);
+            height: 100vh;
+            display: flex;
+            color: #e4e4e7;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: #111111;
+            border-right: 1px solid #27272a;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h3 {
+            color: #f4f4f5;
+            margin-bottom: 24px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-bottom: 1px solid #27272a;
+            padding-bottom: 12px;
+            letter-spacing: -0.025em;
+        }
+
+        .history-item {
+            background: #18181b;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 2px solid #3f3f46;
+        }
+
+        .history-item:hover {
+            background: #27272a;
+            border-color: #52525b;
+            border-left-color: #6366f1;
+        }
+
+        .history-question {
+            font-weight: 500;
+            color: #f4f4f5;
+            font-size: 0.875em;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .history-time {
+            font-size: 0.8em;
+            color: #a1a1aa;
+            line-height: 1.4;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0a0a0a;
+            padding: 0;
+        }
+
+        .header {
+            background: #111111;
+            color: antiquewhite;
+            padding: 24px 32px;
+            border-bottom: 1px solid #27272a;
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            position: relative;
+            z-index: 1;
+            color: #f4f4f5;
+            text-align: center;
+        }
+
+        .chat-container {
+            flex: 1;
+            background: #111111;
+            border-radius: 0;
+            padding: 24px 32px;
+            margin-bottom: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 24px;
+            padding: 16px;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            background: #0a0a0a;
+            min-height: 300px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+
+        .user-message {
+            background: #1c354b;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .bot-message {
+            background: #050506;
+            color: #f69e2c;
+            border: 1px solid #27272a;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-area input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+            background: #18181b;
+            color: #e4e4e7;
+        }
+
+        .input-area input[type="text"]:focus {
+            border-color: #c0c1ff;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5855eb;
+        }
+
+        .btn-secondary {
+            background: #27272a;
+            color: #e4e4e7;
+            border: 1px solid #3f3f46;
+        }
+
+        .btn-secondary:hover {
+            background: #3f3f46;
+            border-color: #52525b;
+        }
+
+        .tools-area {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            font-style: italic;
+            color: #a1a1aa;
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 0.875em;
+        }
+
+        .typing-indicator.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 200px;
+            }
+
+            .main-content {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+    <!-- Sidebar com histórico -->
+    <div class="sidebar">
+        <h3>📋 Histórico de Perguntas</h3>
+        <div id="history-container">
+            <!-- Histórico será carregado aqui -->
+        </div>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div class="main-content">
+        <div class="header">
+            <h1>🤖 Agente Maestro</h1>
+        </div>
+
+        <!-- Container do chat -->
+        <div class="chat-container">
+            <div class="messages-area" id="messages-area">
+                {% if resposta %}
+                <div class="message bot-message">
+                    {{ resposta }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="typing-indicator" id="typing-indicator">
+                🤖 Agente Maestro está digitando...
+            </div>
+
+            <!-- Área de input -->
+            <div class="input-area">
+                <input type="text" id="question-input" placeholder="Faça uma pergunta..."
+                    onkeypress="handleKeyPress(event)">
+                <button class="btn btn-primary" onclick="sendQuestion()">Enviar</button>
+            </div>
+        </div>
+
+        <!-- Ferramentas -->
+        <div class="tools-area">
+            <button class="btn btn-secondary" onclick="showLearnModal()">📚 Aprender com URL</button>
+            <button class="btn btn-secondary" onclick="trainModel()">🎯 Treinar Modelo</button>
+        </div>
+    </div>
+
+    <!-- Modal para aprender com documentação -->
+    <div id="learn-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; backdrop-filter: blur(8px);">
+        <div
+            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111111; padding: 32px; border-radius: 12px; min-width: 400px; border: 1px solid #27272a;">
+            <h3 style="color: #f4f4f5; margin-bottom: 24px; text-align: center; font-weight: 600; font-size: 1.25em;">📚
+                Aprender com Documentação</h3>
+            <input type="text" id="url-input" placeholder="Cole a URL da documentação aqui..."
+                style="width: 100%; padding: 16px; margin: 12px 0; border: 1px solid #27272a; border-radius: 8px; background: #18181b; color: #e4e4e7; box-sizing: border-box;">
+            <div style="text-align: right; margin-top: 24px;">
+                <button class="btn btn-secondary" onclick="hideLearnModal()"
+                    style="margin-right: 10px;">Cancelar</button>
+                <button class="btn btn-primary" onclick="learnFromUrl()">Aprender</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+
+        // Carregar histórico ao inicializar
+        document.addEventListener('DOMContentLoaded', function () {
+            loadHistory();
+        });
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendQuestion();
+            }
+        }
+
+        function sendQuestion() {
+            const input = document.getElementById('question-input');
+            const question = input.value.trim();
+
+            if (!question) return;
+
+            // Adicionar mensagem do usuário
+            addMessage(question, 'user');
+            input.value = '';
+
+            // Mostrar indicador de digitação
+            showTypingIndicator();
+
+            // Enviar pergunta com streaming
+            sendQuestionWithStreaming(question);
+        }
+
+        function addMessage(content, type) {
+            const messagesArea = document.getElementById('messages-area');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = content;
+            messagesArea.appendChild(messageDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typing-indicator').classList.add('show');
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typing-indicator').classList.remove('show');
+        }
+
+        function sendQuestionWithStreaming(question) {
+            // Fechar conexão anterior se existir
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            // Criar nova conexão SSE
+            eventSource = new EventSource(`/api/perguntar_stream?pergunta=${encodeURIComponent(question)}`);
+
+            let responseDiv = null;
+
+            eventSource.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'start') {
+                    hideTypingIndicator();
+                    responseDiv = document.createElement('div');
+                    responseDiv.className = 'message bot-message';
+                    document.getElementById('messages-area').appendChild(responseDiv);
+                } else if (data.type === 'chunk' && responseDiv) {
+                    responseDiv.textContent += data.content;
+                    document.getElementById('messages-area').scrollTop = document.getElementById('messages-area').scrollHeight;
+                } else if (data.type === 'end') {
+                    eventSource.close();
+                    eventSource = null;
+                    loadHistory(); // Recarregar histórico
+                }
+            };
+
+            eventSource.onerror = function (event) {
+                hideTypingIndicator();
+                addMessage('Erro ao processar a pergunta. Tente novamente.', 'bot');
+                eventSource.close();
+                eventSource = null;
+            };
+        }
+
+        function loadHistory() {
+            fetch('/api/historico')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('history-container');
+                    container.innerHTML = '';
+
+                    data.historico.forEach(item => {
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'history-item';
+                        historyItem.onclick = () => loadHistoryItem(item.pergunta, item.resposta);
+
+                        historyItem.innerHTML = `
+                            <div class="history-question">${item.pergunta.substring(0, 50)}${item.pergunta.length > 50 ? '...' : ''}</div>
+                            <div class="history-time">${new Date(item.timestamp).toLocaleString()}</div>
+                        `;
+
+                        container.appendChild(historyItem);
+                    });
+                })
+                .catch(error => console.error('Erro ao carregar histórico:', error));
+        }
+
+        function loadHistoryItem(question, answer) {
+            const messagesArea = document.getElementById('messages-area');
+            messagesArea.innerHTML = '';
+            addMessage(question, 'user');
+            addMessage(answer, 'bot');
+        }
+
+        function showLearnModal() {
+            document.getElementById('learn-modal').style.display = 'block';
+        }
+
+        function hideLearnModal() {
+            document.getElementById('learn-modal').style.display = 'none';
+            document.getElementById('url-input').value = '';
+        }
+
+        function learnFromUrl() {
+            const url = document.getElementById('url-input').value.trim();
+            if (!url) return;
+
+            fetch('/api/aprender_com_documentacao', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `url=${encodeURIComponent(url)}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    addMessage(`📚 Aprendizado concluído: ${data.mensagem}`, 'bot');
+                    hideLearnModal();
+                })
+                .catch(error => {
+                    addMessage('Erro ao aprender com a URL. Tente novamente.', 'bot');
+                    console.error('Erro:', error);
+                });
+        }
+
+        function trainModel() {
+            fetch('/treinar', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    addMessage(`🎯 ${data.mensagem}`, 'bot');
+                })
+                .catch(error => {
+                    addMessage('Erro ao treinar o modelo. Tente novamente.', 'bot');
+                    console.error('Erro:', error);
+                });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,32 +1,27 @@
 import os
-from banco.conexao import conectar, fechar_conexao
+from utils.extrator_codigo import eh_arquivo_suportado
 
-def ler_diretorio_aprendizado(diretorio: str):
-    total = 0
+def ler_diretorio_aprendizado(diretorio_base: str):
+    arquivos = []
     json_files = []
     readme_files = []
-    
-    conn = conectar()
-    for root, dirs, files in os.walk(diretorio):
-        for file in files:
-            caminho = os.path.join(root, file)
-            
-            if file.endswith(".json"):
-                json_files.append(caminho)
-            elif file.endswith(".md"):
-                readme_files.append(caminho)
-            else:
-                try:
-                    with open(caminho, 'r', encoding='utf-8') as f:
-                        conteudo = f.read()
-                        cursor = conn.cursor()
-                        cursor.execute("INSERT INTO conhecimento (caminho, conteudo) VALUES (?, ?)", 
-                                     (caminho, conteudo))
-                        conn.commit()
-                        total += 1
-                except Exception as e:
-                    print(f"Error processing file {caminho}: {str(e)}")
-                    continue
+    total = 0
 
-    fechar_conexao(conn)
-    return total, json_files, readme_files
+    for root, _, files in os.walk(diretorio_base):
+        for f in files:
+            path = os.path.join(root, f)
+            if not eh_arquivo_suportado(path):
+                continue
+            try:
+                with open(path, "r", encoding="utf-8", errors="ignore") as fp:
+                    conteudo = fp.read()
+            except Exception:
+                continue
+            total += 1
+            arquivos.append((path, conteudo))
+            if f.lower().endswith(".json"):
+                json_files.append(path)
+            if f.lower().startswith("readme"):
+                readme_files.append(path)
+
+    return total, arquivos, readme_files

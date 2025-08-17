@@ -3,3 +3,9 @@ uvicorn
 openai
 requests
 python-dotenv
+Jinja2
+beautifulsoup4
+
+
+
+

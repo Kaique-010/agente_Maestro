@@ -1,25 +1,14 @@
-from fastapi import FastAPI, Query
-from banco.conexao import criar_tabela, criar_tabela_conhecimento
-from agente.aprendiz import Aprendiz
-from grafos.grafo_aprendizado import criar_grafo_aprendizado
+from fastapi import FastAPI, Request
+from api.routes import router as api_router
+from web.routes import router as web_router
 
-app = FastAPI(title="Aprendiz Mastre")
+app = FastAPI(title="Aprendiz Mestre")
 
-DIRETORIO = "/app/dados"
-criar_tabela()
-criar_tabela_conhecimento()
-aprendiz = Aprendiz(DIRETORIO)
-grafo, no_responder = criar_grafo_aprendizado()
+# registra rotas
+app.include_router(api_router, prefix="/api", tags=["api"])
+app.include_router(web_router, tags=["web"])
 
-
-@app.get("/treinar")
-def treinar():
-    estado = {}
-    grafo.executar(estado)
-    return {"mensagem": "Aprendizado concluído!"}
-
-@app.get("/perguntar")
-def perguntar(pergunta: str = Query(...)):
-    estado = {"pergunta": pergunta}
-    grafo.executar(estado)
-    return {"resposta": estado.get("resposta", "Não sei responder")}
+# modo dev
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
