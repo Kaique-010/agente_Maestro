@@ -64,6 +64,51 @@ class Aprendiz:
             # salvar conhecimento
             salvar_conhecimento(url, info["resumo"], info["linguagem"], embedding)
             print(f"[Aprendiz] Aprendido de {url}.")
+    
+    def aprender_com_diretorio(self, diretorio: str):
+        """Aprende com todos os arquivos de um diretório específico."""
+        print(f"[Aprendiz] Aprendendo do diretório {diretorio}...")
+        
+        try:
+            total, arquivos, _ = ler_diretorio_aprendizado(diretorio)
+            print(f"[Aprendiz] Encontrados {total} arquivos no diretório.")
+            
+            if total == 0:
+                print(f"[Aprendiz] AVISO: Nenhum arquivo suportado encontrado em {diretorio}")
+                print(f"[Aprendiz] Extensões suportadas: .py, .js, .jsx, .ts, .tsx, .md, .txt")
+                return
+            
+            for i, (path, conteudo) in enumerate(arquivos, 1):
+                print(f"[Aprendiz] Processando arquivo {i}/{total}: {path}")
+                try:
+                    info = extrair_info_arquivo(path, conteudo)
+                    embedding = gerar_embedding(info["resumo"])
+                    salvar_conhecimento(path, info["resumo"], info["linguagem"], embedding)
+                    print(f"[Aprendiz] ✓ Arquivo processado: {path}")
+                except Exception as e:
+                    print(f"[Aprendiz] ✗ Erro ao processar {path}: {e}")
+            
+            print(f"[Aprendiz] Aprendizado do diretório concluído ({total} itens).")
+        
+        except Exception as e:
+            print(f"[Aprendiz] ERRO no aprendizado do diretório: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def aprender_com_arquivo(self, arquivo: str):
+        """Aprende com um arquivo específico."""
+        print(f"[Aprendiz] Aprendendo do arquivo {arquivo}...")
+        try:
+            with open(arquivo, "r", encoding="utf-8", errors="ignore") as fp:
+                conteudo = fp.read()
+            
+            info = extrair_info_arquivo(arquivo, conteudo)
+            embedding = gerar_embedding(info["resumo"])
+            salvar_conhecimento(arquivo, info["resumo"], info["linguagem"], embedding)
+            
+            print(f"[Aprendiz] Arquivo {arquivo} aprendido com sucesso.")
+        except Exception as e:
+            print(f"[Erro] Falha ao processar arquivo {arquivo}: {e}")
 
     def buscar_contexto_relevante(self, pergunta: str, limite=10):
         emb = gerar_embedding(pergunta)

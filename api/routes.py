@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Form
 from fastapi.responses import StreamingResponse
 from grafos.grafo_aprendizado import criar_grafo_aprendizado
 import json
@@ -18,10 +18,17 @@ def treinar():
     return {"mensagem": "Aprendizado concluído."}
 
 @router.post("/aprender_com_documentacao")
-def aprender_com_documentacao(url: str = Query(..., description="URL da documentação")):
+def aprender_com_documentacao(url: str = Form(..., description="URL da documentação")):
     estado = {"url": url, "forcar_treino": False}
     grafo.executar(estado)
     return {"mensagem": "Documentação aprendida com sucesso.", "url": url}
+
+
+@router.post("/aprender_com_diretorio")
+def aprender_com_diretorio(diretorio: str = Form(..., description="Caminho do diretório")):
+    estado = {"diretorio": diretorio, "forcar_treino": True}
+    grafo.executar(estado)
+    return {"mensagem": "Documentação treinada com sucesso.", "diretorio": diretorio}
 
 
 

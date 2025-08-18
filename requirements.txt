@@ -5,6 +5,7 @@ requests
 python-dotenv
 Jinja2
 beautifulsoup4
+python-multipart  
 
 
 

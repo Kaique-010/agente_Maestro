@@ -2,7 +2,7 @@ version: '3.8'
 services:
   aprendiz:
     build: .
-    container_name: aprendiz_oraculo
+    container_name: agente_maestro  
     ports:
       - '8010:8010'
     environment:

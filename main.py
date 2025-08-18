@@ -4,7 +4,7 @@ from web.routes import router as web_router
 
 app = FastAPI(title="Aprendiz Mestre")
 
-# registra rotas
+# registra rotas com prefixo /api
 app.include_router(api_router, prefix="/api", tags=["api"])
 app.include_router(web_router, tags=["web"])
 

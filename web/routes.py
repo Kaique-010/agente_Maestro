@@ -13,7 +13,7 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "resposta": None})
 
 
-@router.post("/perguntar")
+@router.post("/api/perguntar")
 async def perguntar(request: Request, pergunta: str = Form(...)):
     estado = {"pergunta": pergunta, "forcar_treino": False}
     grafo.executar(estado)
@@ -23,17 +23,24 @@ async def perguntar(request: Request, pergunta: str = Form(...)):
         estado["resposta"] = estado.get("resposta", "Sem resposta.")
     return templates.TemplateResponse("index.html", {"request": request, "resposta": estado.get("resposta", "Sem resposta.")})
 
-@router.get("/treinar")
+@router.post("/api/treinar")
 async def treinar(request: Request):
     estado = {"forcar_treino": True}
     grafo.executar(estado)
-    return templates.TemplateResponse("index.html", {"request": request, "resposta": "Aprendizado concluído."})
+    return {"mensagem": "Aprendizado concluído."}
 
-@router.post("/aprender_com_documentacao")
+@router.post("/api/aprender_com_documentacao")
 async def aprender_com_documentacao(request: Request, url: str = Form(...)):
     estado = {"url": url, "forcar_treino": False}
     grafo.executar(estado)
     return templates.TemplateResponse("index.html", {"request": request, "resposta": "Documentação aprendida com sucesso."})
+
+@router.post("/api/aprender_com_diretorio")
+async def aprender_com_diretorio(request: Request, diretorio: str = Form(...)):
+    estado = {"diretorio": diretorio, "forcar_treino": True}
+    grafo.executar(estado)
+    return {"mensagem": "Diretório aprendido com sucesso.", "diretorio": diretorio}
+    return templates.TemplateResponse("index.html", {"request": request, "resposta": "Documentação treinada com sucesso."})
 
 
 

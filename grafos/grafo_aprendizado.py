@@ -6,12 +6,20 @@ from config import DIRETORIO_DADOS
 def criar_grafo_aprendizado():
     def no_aprender(estado):
         aprendiz = Aprendiz(DIRETORIO_DADOS)
-        # Treina apenas se solicitado no estado ou se ainda não treinou
-        if estado.get("forcar_treino", True):
-            aprendiz.aprender(reset=True)
-        # Se há URL para aprender, processa documentação
-        if estado.get("url"):
+        
+        # Se há diretório específico, só processa ele
+        if estado.get("diretorio"):
+            aprendiz.aprender_com_diretorio(estado["diretorio"])
+        # Se há URL, processa documentação
+        elif estado.get("url"):
             aprendiz.aprender_com_documentacao_web(estado["url"])
+        # Se há arquivo específico, processa ele
+        elif estado.get("arquivo"):
+            aprendiz.aprender_com_arquivo(estado["arquivo"])
+        # Só treina o diretório padrão se não há entrada específica
+        elif estado.get("forcar_treino", True):
+            aprendiz.aprender(reset=True)
+        
         estado["aprendiz"] = aprendiz
         return estado
 
