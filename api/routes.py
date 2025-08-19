@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Query, Form
 from fastapi.responses import StreamingResponse
 from grafos.grafo_aprendizado import criar_grafo_aprendizado
+from agente.executor import perguntar_a_llm_stream
+
 import json
 import time
 from datetime import datetime
@@ -109,37 +111,36 @@ def obter_historico():
 
 @router.get("/perguntar_stream")
 def perguntar_stream(pergunta: str = Query(..., description="Faça uma pergunta com streaming")):
-    """Endpoint para perguntas com streaming de resposta"""
+    """Endpoint para perguntas com streaming direto da LLM"""
     
     def generate_response():
         # Enviar evento de início
         yield f"data: {json.dumps({'type': 'start'})}\n\n"
         
-        # Processar pergunta
+        # Processar pergunta e obter contexto
         estado = {"pergunta": pergunta, "forcar_treino": False}
         grafo.executar(estado)
-        resposta = estado.get("resposta", "Sem resposta.")
         
-        # Verificar se resposta é string antes de fazer split
-        if isinstance(resposta, str):
-            palavras = resposta.split()
-        else:
-            # Se resposta não é string (ex: lista de estatísticas), converter para string
-            resposta = str(resposta)
-            palavras = resposta.split()
+        aprendiz = estado.get("aprendiz")
+        contexto = estado.get("contexto", [])
         
-        chunk_size = 3  # Número de palavras por chunk
-        
-        for i in range(0, len(palavras), chunk_size):
-            chunk = " ".join(palavras[i:i + chunk_size])
-            if i + chunk_size < len(palavras):
-                chunk += " "
+        if contexto and aprendiz:
+            # Usar streaming da LLM
+            stream = perguntar_a_llm_stream(pergunta, contexto)
+            resposta_completa = ""
             
-            yield f"data: {json.dumps({'type': 'chunk', 'content': chunk})}\n\n"
-            time.sleep(0.1)  # Pequena pausa para simular streaming
-        
-        # Salvar no histórico
-        salvar_historico(pergunta, resposta)
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    content = chunk.choices[0].delta.content
+                    resposta_completa += content
+                    yield f"data: {json.dumps({'type': 'chunk', 'content': content})}\n\n"
+            
+            # Salvar no histórico
+            salvar_historico(pergunta, resposta_completa)
+        else:
+            resposta = "Sem contexto relevante encontrado."
+            yield f"data: {json.dumps({'type': 'chunk', 'content': resposta})}\n\n"
+            salvar_historico(pergunta, resposta)
         
         # Enviar evento de fim
         yield f"data: {json.dumps({'type': 'end'})}\n\n"
@@ -154,8 +155,3 @@ def perguntar_stream(pergunta: str = Query(..., description="Faça uma pergunta 
             "Access-Control-Allow-Headers": "*"
         }
     )
-
-
-
-
-
