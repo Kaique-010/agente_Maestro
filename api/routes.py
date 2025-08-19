@@ -120,8 +120,14 @@ def perguntar_stream(pergunta: str = Query(..., description="Faça uma pergunta 
         grafo.executar(estado)
         resposta = estado.get("resposta", "Sem resposta.")
         
-        # Simular streaming dividindo a resposta em chunks
-        palavras = resposta.split()
+        # Verificar se resposta é string antes de fazer split
+        if isinstance(resposta, str):
+            palavras = resposta.split()
+        else:
+            # Se resposta não é string (ex: lista de estatísticas), converter para string
+            resposta = str(resposta)
+            palavras = resposta.split()
+        
         chunk_size = 3  # Número de palavras por chunk
         
         for i in range(0, len(palavras), chunk_size):
@@ -148,7 +154,6 @@ def perguntar_stream(pergunta: str = Query(..., description="Faça uma pergunta 
             "Access-Control-Allow-Headers": "*"
         }
     )
-
 
 
 

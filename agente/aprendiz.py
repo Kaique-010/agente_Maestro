@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from leitor.leitor_diretorio import ler_diretorio_aprendizado
 from memoria.memoria_sqlite import (
     criar_tabelas, limpar_conhecimento, salvar_conhecimento,
-    buscar_por_embedding, obter_conhecimento
+    buscar_por_embedding, obter_conhecimento, obter_estatisticas_por_linguagem
 )
 from utils.extrator_codigo import extrair_info_arquivo
 from utils.embeddings import gerar_embedding
@@ -121,3 +121,14 @@ class Aprendiz:
 
     def debug_listar_sample(self, n=5):
         return obter_conhecimento(n)
+    
+    def listar_conceitos(self):
+        """
+        Retorna estatísticas de aprendizado por linguagem
+        Returns: List[Tuple[str, int, float]] - (linguagem, quantidade, percentual)
+        """
+        return obter_estatisticas_por_linguagem()
+    
+    
+
+

@@ -28,6 +28,14 @@ def criar_grafo_aprendizado():
         aprendiz = estado.get("aprendiz")
         estado["contexto"] = aprendiz.buscar_contexto_relevante(pergunta, limite=12) if pergunta else []
         return estado
+    
+    def listar_aprendizado(estado):
+        aprendiz = estado.get("aprendiz")
+        if aprendiz:
+            estado["resposta"] = aprendiz.listar_conceitos()
+        else:
+            estado["resposta"] = "Nenhum aprendizado encontrado."
+        return estado
 
     def no_responder(estado):
         pergunta = estado.get("pergunta", "")
@@ -39,10 +47,25 @@ def criar_grafo_aprendizado():
         estado["resposta"] = aprendiz.consultar(pergunta) if pares else "Sem contexto relevante encontrado."
         return estado
 
+    def no_decisor(estado):
+        """Decide se deve listar conceitos ou responder pergunta"""
+        pergunta = estado.get("pergunta", "")
+        listar_conceitos = estado.get("listar_conceitos", False)
+        
+        if listar_conceitos or not pergunta:
+            # Se foi solicitado listar conceitos ou não há pergunta, executa listagem
+            return listar_aprendizado(estado)
+        else:
+            # Se há pergunta, executa o fluxo de resposta
+            estado = no_filtrar(estado)
+            return no_responder(estado)
+
     raiz = No("raiz", None)
     n1 = No("aprender", no_aprender)
-    n2 = No("filtrar", no_filtrar)
-    n3 = No("responder", no_responder)
+    n2 = No("decisor", no_decisor)
 
-    raiz.ligar(n1).ligar(n2).ligar(n3)
-    return raiz, n3
+    # Conectar o fluxo principal
+    raiz.ligar(n1)
+    n1.ligar(n2)
+    
+    return raiz, n2

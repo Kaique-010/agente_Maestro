@@ -3,3 +3,10 @@ __pycache__
 .env
 memoria.db
 conhecimento.db
+dados.db
+logs.txt
+/dados/
+
+dados
+
+
