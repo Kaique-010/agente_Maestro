@@ -1,6 +1,9 @@
+import requests
+from bs4 import BeautifulSoup
 from openai import OpenAI
 from config import OPENAI_API_KEY, LLM_MODEL, MAX_ARQUIVOS_CONTEXT
 from dotenv import load_dotenv
+
 load_dotenv()
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -63,13 +66,64 @@ EVITE:
 - Código inline para blocos complexos
 - Perda de indentação
 - Misturar explicação com código
-- Omitir imports necessários"""
+- Omitir imports necessários
 
-def perguntar_a_llm(pergunta, contexto_pairs):
-    # contexto_pairs: List[(path, resumo)]
+USO DE FERRAMENTAS:
+- Se a pergunta do usuário exigir informações que não estão no contexto (por exemplo, sobre uma biblioteca que não foi usada ainda, ou um conceito novo), você DEVE usar a ferramenta de busca na web.
+- Para usar a busca, responda APENAS com o seguinte formato: [pesquisar: 'sua query aqui']
+- A query deve ser uma string concisa e direta.
+- A função retornará um resumo dos resultados que você pode usar para formular sua resposta."""
+
+import re
+
+def executar_pergunta_com_ferramentas(pergunta, contexto_pairs, stream=False):
+    """Orquestra a execução de perguntas, permitindo o uso de ferramentas como a pesquisa na web."""
+    if stream:
+        stream_original = _perguntar_a_llm_stream_direto(pergunta, contexto_pairs)
+        # Como o streaming complica a detecção de chamadas de ferramentas, 
+        # por enquanto, vamos passar a resposta diretamente.
+        # Uma implementação futura poderia bufferizar a resposta inicial.
+        return stream_original
+
+    resposta_inicial = _perguntar_a_llm_direto(pergunta, contexto_pairs)
+
+    # Padrão para detectar: [pesquisar: 'termo de busca']
+    padrao_pesquisa = r"\\[pesquisar: '(.*?)'\\]"
+    match = re.search(padrao_pesquisa, resposta_inicial)
+
+    if match:
+        query = match.group(1)
+        print(f"\n[INFO] Detectada chamada de ferramenta: pesquisar_na_web('{query}')")
+        resultados_pesquisa = pesquisar_na_web(query)
+
+        # Novo prompt para a LLM com os resultados da pesquisa
+        # Registrar a fonte antes de retornar a resposta
+        registrar_fonte(f"pesquisar: '{query}'", resultados_pesquisa, 'web')
+
+        novo_contexto = f"""Resultados da pesquisa para '{query}':
+{resultados_pesquisa}
+
+Com base nos resultados acima, responda à pergunta original: {pergunta}"""
+        
+        # Remove o contexto de arquivos para focar nos resultados da web
+        return _perguntar_a_llm_direto(novo_contexto, [])
+    
+    return resposta_inicial
+
+def _carregar_conteudo_arquivo(path):
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as fp:
+            return fp.read()
+    except Exception as e:
+        print(f"[Erro] Falha ao ler o arquivo {path}: {e}")
+        return None
+
+def _perguntar_a_llm_direto(pergunta, contexto_pairs):
     contexto_fmt = []
     for path, resumo in contexto_pairs[:MAX_ARQUIVOS_CONTEXT]:
-        contexto_fmt.append(f"ARQUIVO: {path}\nPADROES:\n{resumo}\n---")
+        conteudo = _carregar_conteudo_arquivo(path)
+        if conteudo:
+            contexto_fmt.append(f"ARQUIVO: {path}\nCONTEUDO:\n```\n{conteudo}\n```\n---")
     contexto_txt = "\n".join(contexto_fmt)
 
     mensagens = [
@@ -84,11 +138,13 @@ def perguntar_a_llm(pergunta, contexto_pairs):
     return resp.choices[0].message.content
 
 
-def perguntar_a_llm_stream(pergunta, contexto_pairs):
+def _perguntar_a_llm_stream_direto(pergunta, contexto_pairs):
     """Versão com streaming para respostas em tempo real"""
     contexto_fmt = []
     for path, resumo in contexto_pairs[:MAX_ARQUIVOS_CONTEXT]:
-        contexto_fmt.append(f"ARQUIVO: {path}\nPADROES:\n{resumo}\n---")
+        conteudo = _carregar_conteudo_arquivo(path)
+        if conteudo:
+            contexto_fmt.append(f"ARQUIVO: {path}\nCONTEUDO:\n```\n{conteudo}\n```\n---")
     contexto_txt = "\n".join(contexto_fmt)
 
     mensagens = [
@@ -102,3 +158,36 @@ def perguntar_a_llm_stream(pergunta, contexto_pairs):
         temperature=0,
         stream=True
     )
+
+def pesquisar_na_web(query: str, num_results: int = 5) -> str:
+    """Realiza uma busca na web e retorna um resumo dos resultados."""
+    search_url = f"https://html.duckduckgo.com/html/?q={query}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+
+    try:
+        response = requests.get(search_url, headers=headers, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        results = soup.find_all('div', class_='result')
+        
+        resumo_final = ""
+        for i, result in enumerate(results[:num_results]):
+            title_element = result.find('a', class_='result__a')
+            snippet_element = result.find('a', class_='result__snippet')
+            link_element = result.find('a', class_='result__url')
+            
+            if title_element and snippet_element and link_element:
+                title = title_element.get_text(strip=True)
+                snippet = snippet_element.get_text(strip=True)
+                link = link_element.get_text(strip=True)
+                resumo_final += f"### {title}\n**Link:** {link}\n**Resumo:** {snippet}\n\n"
+        
+        return resumo_final if resumo_final else "Nenhum resultado encontrado."
+
+    except requests.RequestException as e:
+        return f"Erro ao pesquisar na web: {e}"
+    except Exception as e:
+        return f"Ocorreu um erro inesperado: {e}"

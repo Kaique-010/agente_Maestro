@@ -1,11 +1,12 @@
 fastapi
 uvicorn
+PyPDF2
 openai
 requests
 python-dotenv
 Jinja2
 beautifulsoup4
-python-multipart  
+python-multipart
 
 
 

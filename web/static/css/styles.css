@@ -1,0 +1,242 @@
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  background: linear-gradient(135deg, #0a0a0a, #111111);
+  color: #e4e4e7;
+  padding-top: 56px;
+}
+
+.main-content {
+  background: #0a0a0a;
+  min-height: calc(100vh - 56px);
+  padding: 24px;
+}
+
+.chat-container {
+  background: #111111;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid #27272a;
+}
+
+.messages-area {
+  height: 400px;
+  overflow-y: auto;
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #0a0a0a;
+}
+
+.message {
+  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 10px;
+  max-width: 80%;
+}
+
+.user-message {
+  background: #1c354b;
+  color: white;
+  margin-left: auto;
+  text-align: right;
+}
+
+.bot-message {
+  background: #050506;
+  color: #f69e2c;
+  border: 1px solid #27272a;
+}
+
+.input-area {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-area input[type='text'] {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #18181b;
+  color: #e4e4e7;
+}
+
+.input-area input[type='text']:focus {
+  border-color: #c0c1ff;
+  box-shadow: none;
+}
+
+.history-item {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.history-item:hover {
+  background: #27272a;
+  border-color: #52525b;
+}
+
+.history-question {
+  font-weight: 500;
+  color: #f4f4f5;
+  font-size: 0.875em;
+  margin-bottom: 4px;
+}
+
+.history-time {
+  font-size: 0.8em;
+  color: #a1a1aa;
+}
+
+.typing-indicator {
+  display: none;
+  padding: 12px 16px;
+  font-style: italic;
+  color: #a1a1aa;
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 0.875em;
+}
+
+.typing-indicator.show {
+  display: block;
+}
+
+.offcanvas {
+  background: #111111;
+}
+
+.offcanvas-header {
+  border-bottom: 1px solid #27272a;
+}
+
+.btn-custom {
+  background: #6366f1;
+  border: none;
+  color: white;
+}
+
+.btn-custom:hover {
+  background: #5855eb;
+  color: white;
+}
+
+.btn-secondary-custom {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  color: #e4e4e7;
+}
+
+.btn-secondary-custom:hover {
+  background: #3f3f46;
+  border-color: #52525b;
+  color: #e4e4e7;
+}
+
+/* Estilos para blocos de código melhorados */
+.code-block-container {
+  margin: 15px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #404040;
+  background: #1e1e1e;
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2d2d2d;
+  padding: 8px 16px;
+  border-bottom: 1px solid #404040;
+}
+
+.code-language {
+  color: #f69e2c;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.copy-btn {
+  background: #3f3f46;
+  border: none;
+  color: #e4e4e7;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
+  background: #52525b;
+}
+
+.message pre {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.message pre code {
+  background: transparent;
+  color: #d4d4d4;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.inline-code {
+  background: #2a2a2a;
+  color: #f69e2c;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  border: 1px solid #404040;
+}
+
+code-block-container.streaming {
+  border-left: 3px solid #f69e2c;
+}
+
+.streaming-indicator {
+  color: #f69e2c;
+  font-size: 11px;
+  font-style: italic;
+  animation: pulse 5.5s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+pre code {
+  white-space: pre !important;
+  word-wrap: normal !important;
+  overflow-x: auto;
+}

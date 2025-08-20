@@ -29,34 +29,37 @@ def criar_grafo_aprendizado():
         estado["contexto"] = aprendiz.buscar_contexto_relevante(pergunta, limite=12) if pergunta else []
         return estado
     
-    def listar_aprendizado(estado):
-        aprendiz = estado.get("aprendiz")
-        if aprendiz:
-            estado["resposta"] = aprendiz.listar_conceitos()
-        else:
-            estado["resposta"] = "Nenhum aprendizado encontrado."
-        return estado
-
     def no_responder(estado):
         pergunta = estado.get("pergunta", "")
         if not pergunta:
             estado["resposta"] = "Pergunta vazia."
             return estado
         aprendiz = estado.get("aprendiz")
+        print(f"[DEBUG] Aprendiz: {aprendiz}")  # Adicionado para depuração
         pares = estado.get("contexto", [])
         estado["resposta"] = aprendiz.consultar(pergunta) if pares else "Sem contexto relevante encontrado."
+        
+        # Adicionar registro da fonte da resposta
+        estado["fonte"] = aprendiz.registrar_fonte(pergunta, "resumo da pergunta", "linguagem da resposta") 
         return estado
 
+    def listar_aprendizado(estado):
+        aprendiz = estado.get("aprendiz")
+        if aprendiz:
+            estado["resposta"] = aprendiz.listar_conceitos()
+            # Quando listar conceitos, também registrar a fonte
+            estado["fonte"] = 'Conceitos listados'
+        else:
+            estado["resposta"] = "Nenhum aprendizado encontrado."
+        return estado
+
+    # Manter a negociação de perguntas e conceitos
     def no_decisor(estado):
-        """Decide se deve listar conceitos ou responder pergunta"""
         pergunta = estado.get("pergunta", "")
         listar_conceitos = estado.get("listar_conceitos", False)
-        
         if listar_conceitos or not pergunta:
-            # Se foi solicitado listar conceitos ou não há pergunta, executa listagem
             return listar_aprendizado(estado)
         else:
-            # Se há pergunta, executa o fluxo de resposta
             estado = no_filtrar(estado)
             return no_responder(estado)
 

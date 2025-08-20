@@ -3,11 +3,13 @@ from bs4 import BeautifulSoup
 from leitor.leitor_diretorio import ler_diretorio_aprendizado
 from memoria.memoria_sqlite import (
     criar_tabelas, limpar_conhecimento, salvar_conhecimento,
-    buscar_por_embedding, obter_conhecimento, obter_estatisticas_por_linguagem
+    buscar_por_embedding, obter_conhecimento, obter_estatisticas_por_linguagem,
+    obter_todos_arquivos, obter_todas_fontes, salvar_fonte
+
 )
 from utils.extrator_codigo import extrair_info_arquivo
 from utils.embeddings import gerar_embedding
-from agente.executor import perguntar_a_llm
+from agente.executor import executar_pergunta_com_ferramentas
 
 def extrair_conteudo_documentacao(url: str) -> str:
     """Extrai conteúdo de uma página de documentação."""
@@ -39,6 +41,7 @@ class Aprendiz:
         self.diretorio = diretorio
         criar_tabelas()
         print("[Aprendiz] Inicializado.")
+        self.fontes = []
 
     def aprender(self, reset=True):
         if reset:
@@ -57,6 +60,9 @@ class Aprendiz:
             print(f"[Aprendiz] Aprendendo de {url}...")
             # extrair conteúdo da documentação
             conteudo = extrair_conteudo_documentacao(url)
+            if conteudo.startswith("Erro"):  # verifica se houve erro durante a extração
+                print(f"[Aprendiz] Falha ao aprender de {url}: {conteudo}")
+                return f"Falha ao acessar a documentação: {conteudo}"
             # processar conteúdo
             info = extrair_info_arquivo(url, conteudo)
             # gerar embedding
@@ -117,7 +123,7 @@ class Aprendiz:
 
     def consultar(self, pergunta: str):
         contexto = self.buscar_contexto_relevante(pergunta, limite=12)
-        return perguntar_a_llm(pergunta, contexto)
+        return executar_pergunta_com_ferramentas(pergunta, contexto)
 
     def debug_listar_sample(self, n=5):
         return obter_conhecimento(n)
@@ -128,6 +134,26 @@ class Aprendiz:
         Returns: List[Tuple[str, int, float]] - (linguagem, quantidade, percentual)
         """
         return obter_estatisticas_por_linguagem()
+    
+    def listar_arquivos(self):
+        """
+        Retorna todos os arquivos conhecidos
+        Returns: List[Dict[str, str]] - (caminho, resumo, linguagem)
+        """
+        return obter_todos_arquivos()
+    
+    def registrar_fonte(self, fonte: str, resumo: str, linguagem: str):
+        """Registra a fonte de aprendizado."""
+        # Aqui você pode implementar como deseja armazenar a fonte, por exemplo, no banco de dados.
+        salvar_fonte(fonte, resumo, linguagem)
+        if fonte not in self.fontes:
+            self.fontes.append(fonte)
+
+
+        print(f"[Aprendiz] Fonte registrada: {fonte}")
+        # Adicione lógica para salvar no banco de dados se necessário.
+
+
     
     
 

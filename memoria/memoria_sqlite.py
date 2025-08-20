@@ -21,6 +21,15 @@ def criar_tabelas():
     );
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_path ON conhecimento(path);")
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS fontes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        url TEXT NOT NULL,
+        resumo TEXT,
+        linguagem TEXT
+    );
+    """
+    )
     con.commit()
     con.close()
 
@@ -102,3 +111,37 @@ def obter_estatisticas_por_linguagem():
     
     con.close()
     return resultados
+
+
+def obter_todos_arquivos():
+    """
+    Retorna todos os arquivos conhecidos
+    Returns: List[Dict[str, str]] - (caminho, resumo, linguagem)
+    """
+    con = _conn()
+    cur = con.cursor()
+    cur.execute("SELECT path, resumo, linguagem FROM conhecimento")
+    rows = cur.fetchall()
+    con.close()
+    return [(path, resumo, linguagem) for path, resumo, linguagem in rows]
+
+def obter_todas_fontes():
+    """
+    Retorna todas as fontes conhecidas
+    Returns: List[Dict[str, str]] - (url, resumo, linguagem)
+    """
+    con = _conn()
+    cur = con.cursor()
+    cur.execute("SELECT url, resumo, linguagem FROM fontes")
+    rows = cur.fetchall()
+    con.close()
+    return [(url, resumo, linguagem) for url, resumo, linguagem in rows]
+
+def salvar_fonte(url: str, resumo: str, linguagem: str):
+    """Salva uma fonte de aprendizado."""
+    con = _conn()
+    cur = con.cursor()
+    cur.execute("INSERT INTO fontes (url, resumo, linguagem) VALUES (?, ?, ?)", (url, resumo, linguagem))
+    con.commit()
+    con.close()
+

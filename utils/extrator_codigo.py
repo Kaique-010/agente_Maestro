@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 EXTS_CODE = {".py", ".js", ".jsx", ".ts", ".tsx"}
-EXTS_TEXT = {".md", ".txt"}
+EXTS_TEXT = {".md", ".txt", ".pdf"}
 
 def eh_arquivo_suportado(path: str) -> bool:
     ext = Path(path).suffix.lower()
@@ -13,7 +13,7 @@ def linguagem_por_ext(path: str) -> str:
     if ext == ".py": return "python"
     if ext in [".js", ".jsx"]: return "javascript"
     if ext in [".ts", ".tsx"]: return "typescript"
-    if ext in [".md", ".txt"]: return "texto"
+    if ext in EXTS_TEXT: return "texto"
     return "outro"
 
 def extrair_info_arquivo(path, conteudo, limite_chars=2000):

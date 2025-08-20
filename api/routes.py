@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, Form
 from fastapi.responses import StreamingResponse
 from grafos.grafo_aprendizado import criar_grafo_aprendizado
-from agente.executor import perguntar_a_llm_stream
+from agente.executor import executar_pergunta_com_ferramentas
 
 import json
 import time
@@ -109,6 +109,17 @@ def obter_historico():
     return {"historico": historico}
 
 
+@router.post("/process_audio")
+def processar_audio(transcricao: str = Form(..., description="Transcrição do áudio")):
+    """Endpoint para receber e processar a transcrição de áudio do frontend"""
+    estado = {"pergunta": transcricao, "forcar_treino": False}
+    grafo.executar(estado)
+    resposta = estado.get("resposta", "Sem resposta.")
+    
+    salvar_historico(transcricao, resposta)
+    
+    return {"resposta": resposta}
+
 @router.get("/perguntar_stream")
 def perguntar_stream(pergunta: str = Query(..., description="Faça uma pergunta com streaming")):
     """Endpoint para perguntas com streaming direto da LLM"""
@@ -125,8 +136,8 @@ def perguntar_stream(pergunta: str = Query(..., description="Faça uma pergunta 
         contexto = estado.get("contexto", [])
         
         if contexto and aprendiz:
-            # Usar streaming da LLM
-            stream = perguntar_a_llm_stream(pergunta, contexto)
+            # Usar o orquestrador de ferramentas (no modo stream)
+            stream = executar_pergunta_com_ferramentas(pergunta, contexto, stream=True)
             resposta_completa = ""
             
             for chunk in stream:
