@@ -95,22 +95,19 @@ function formatMarkdown(text) {
   }
 
   // Detectar blocos de código com melhor preservação de indentação
-  const codeBlockRegex = /```(\w+)?\s*\n?([\s\S]*?)```/g
   let formattedText = text
 
   // Processar blocos de código preservando indentação
-  formattedText = formattedText.replace(
-    codeBlockRegex,
-    (match, language, code) => {
-      const lang = language || 'text'
-      // Preservar indentação original
-      const preservedCode = code.replace(/^\n+|\n+$/g, '') // Remove quebras extras no início/fim
-      const escapedCode = escapeHtml(preservedCode)
+  formattedText = formattedText.replace((match, language, code) => {
+    const lang = language || 'text'
+    // Preservar indentação original
+    const preservedCode = code.replace(/^\n+|\n+$/g, '') // Remove quebras extras no início/fim
+    const escapedCode = escapeHtml(preservedCode)
 
-      // Gerar ID único para o bloco de código
-      const codeId = 'code-' + Math.random().toString(36).substr(2, 9)
+    // Gerar ID único para o bloco de código
+    const codeId = 'code-' + Math.random().toString(36).substr(2, 9)
 
-      return `
+    return `
                 <div class="code-block-container">
                     <div class="code-header">
                         <span class="code-language">${lang}</span>
@@ -120,23 +117,7 @@ function formatMarkdown(text) {
                     </div>
                     <pre><code id="${codeId}" class="language-${lang}">${escapedCode}</code></pre>
                 </div>`
-    }
-  )
-
-  // Código inline
-  formattedText = formattedText.replace(
-    /`([^`\n]+)`/g,
-    '<code class="inline-code">$1</code>'
-  )
-
-  // Negrito
-  formattedText = formattedText.replace(
-    /\*\*([^*]+)\*\*/g,
-    '<strong>$1</strong>'
-  )
-
-  // Itálico
-  formattedText = formattedText.replace(/\*([^*]+)\*/g, '<em>$1</em>')
+  })
 
   // Quebras de linha
   formattedText = formattedText.replace(/\n/g, '<br>')
@@ -176,7 +157,7 @@ function showTypingIndicator() {
   indicator.innerHTML = 'Agente Maestro está analisando e gerando código...'
   indicator.classList.add('show')
   clearTimeout(indicator.timeout)
-  indicator.timeout = setTimeout(hideTypingIndicator, 3000); // Aumentando o tempo para 3000ms para melhor visualização
+  indicator.timeout = setTimeout(hideTypingIndicator, 5000)
 }
 
 function updateTypingIndicator(message) {
@@ -346,88 +327,6 @@ function sendQuestionWithStreaming(question) {
     eventSource.close()
     eventSource = null
   }
-}
-
-// Nova função para formatação durante streaming
-function formatMarkdownStreaming(text) {
-  const escapeHtml = (unsafe) => {
-    return unsafe
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-  }
-
-  // Detectar blocos de código completos e incompletos
-  const completeCodeBlockRegex = /```(\w+)?\s*\n?([\s\S]*?)```/g
-  const incompleteCodeBlockRegex = /```(\w+)?\s*\n?([\s\S]*)$/
-
-  let formattedText = text
-
-  // Processar blocos de código completos
-  formattedText = formattedText.replace(
-    completeCodeBlockRegex,
-    (match, language, code) => {
-      const lang = language || 'text'
-      const preservedCode = code.replace(/^\n+|\n+$/g, '')
-      const escapedCode = escapeHtml(preservedCode)
-      const codeId = 'code-' + Math.random().toString(36).substr(2, 9)
-
-      return `
-                <div class="code-block-container">
-                    <div class="code-header">
-                        <span class="code-language">${lang}</span>
-                        <button class="copy-btn" onclick="copyCode('${codeId}')" title="Copiar código">
-                            📋 Copiar
-                        </button>
-                    </div>
-                    <pre><code id="${codeId}" class="language-${lang}">${escapedCode}</code></pre>
-                </div>`
-    }
-  )
-
-  // Processar bloco de código incompleto (ainda sendo digitado)
-  const incompleteMatch = formattedText.match(incompleteCodeBlockRegex)
-  if (
-    incompleteMatch &&
-    !formattedText.includes('```', incompleteMatch.index + 3)
-  ) {
-    const [fullMatch, language, code] = incompleteMatch
-    const lang = language || 'text'
-    const escapedCode = escapeHtml(code)
-
-    formattedText = formattedText.replace(
-      incompleteCodeBlockRegex,
-      `<div class="code-block-container streaming">
-                        <div class="code-header">
-                            <span class="code-language">${lang}</span>
-                            <span class="streaming-indicator">✍️ Digitando...</span>
-                        </div>
-                        <pre><code class="language-${lang}">${escapedCode}</code></pre>
-                    </div>`
-    )
-  }
-
-  // Código inline
-  formattedText = formattedText.replace(
-    /`([^`\n]+)`/g,
-    '<code class="inline-code">$1</code>'
-  )
-
-  // Negrito
-  formattedText = formattedText.replace(
-    /\*\*([^*]+)\*\*/g,
-    '<strong>$1</strong>'
-  )
-
-  // Itálico
-  formattedText = formattedText.replace(/\*([^*]+)\*/g, '<em>$1</em>')
-
-  // Quebras de linha (preservar para código)
-  formattedText = formattedText.replace(/\n/g, '<br>')
-
-  return formattedText
 }
 
 function loadHistory() {

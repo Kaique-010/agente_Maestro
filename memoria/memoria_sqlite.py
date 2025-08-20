@@ -28,8 +28,17 @@ def criar_tabelas():
         resumo TEXT,
         linguagem TEXT
     );
-    """
-    )
+    """)
+    # Nova tabela para memórias de embedding
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS memorias_embedding (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pergunta TEXT NOT NULL,
+        resposta TEXT NOT NULL,
+        embedding TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
     con.commit()
     con.close()
 
@@ -145,3 +154,47 @@ def salvar_fonte(url: str, resumo: str, linguagem: str):
     con.commit()
     con.close()
 
+
+def salvar_memoria_embedding(pergunta: str, resposta: str):
+    """Registra a memória de embedding."""
+    from utils.embeddings import gerar_embedding
+    import json
+    
+    con = _conn()
+    cur = con.cursor()
+    
+    # Gerar embedding da pergunta
+    embedding = gerar_embedding(pergunta)
+    
+    cur.execute(
+        "INSERT INTO memorias_embedding (pergunta, resposta, embedding) VALUES (?, ?, ?)", 
+        (pergunta, resposta, json.dumps(embedding))
+    )
+    con.commit()
+    con.close()
+
+def obter_memorias_embedding(limite=50):
+    """Retorna memórias de embedding armazenadas."""
+    con = _conn()
+    cur = con.cursor()
+    cur.execute(
+        "SELECT pergunta, resposta, embedding, timestamp FROM memorias_embedding ORDER BY timestamp DESC LIMIT ?", 
+        (limite,)
+    )
+    rows = cur.fetchall()
+    con.close()
+    return [(pergunta, resposta, json.loads(embedding), timestamp) for pergunta, resposta, embedding, timestamp in rows]
+
+def buscar_memoria_por_embedding(emb_consulta: list, limite=5):
+    """Busca memórias similares por embedding."""
+    con = _conn()
+    cur = con.cursor()
+    cur.execute("SELECT pergunta, resposta, embedding FROM memorias_embedding")
+    candidatos = []
+    for pergunta, resposta, emb_json in cur.fetchall():
+        emb = json.loads(emb_json)
+        score = _cosine(emb_consulta, emb)
+        candidatos.append((score, pergunta, resposta))
+    con.close()
+    candidatos.sort(reverse=True, key=lambda x: x[0])
+    return [(p, r) for _, p, r in candidatos[:limite]]

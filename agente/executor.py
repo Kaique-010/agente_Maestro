@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 from openai import OpenAI
 from config import OPENAI_API_KEY, LLM_MODEL, MAX_ARQUIVOS_CONTEXT
 from dotenv import load_dotenv
+from memoria.memoria_sqlite import buscar_memoria_por_embedding
+from utils.embeddings import gerar_embedding
 
 load_dotenv()
 
@@ -76,16 +78,13 @@ USO DE FERRAMENTAS:
 
 import re
 
-def executar_pergunta_com_ferramentas(pergunta, contexto_pairs, stream=False):
+def executar_pergunta_com_ferramentas(pergunta, contexto_pairs, stream=False, aprendiz=None):
     """Orquestra a execução de perguntas, permitindo o uso de ferramentas como a pesquisa na web."""
     if stream:
         stream_original = _perguntar_a_llm_stream_direto(pergunta, contexto_pairs)
-        # Como o streaming complica a detecção de chamadas de ferramentas, 
-        # por enquanto, vamos passar a resposta diretamente.
-        # Uma implementação futura poderia bufferizar a resposta inicial.
         return stream_original
 
-    resposta_inicial = _perguntar_a_llm_direto(pergunta, contexto_pairs)
+    resposta_inicial, _ = _perguntar_a_llm_direto(pergunta, contexto_pairs, aprendiz)
 
     # Padrão para detectar: [pesquisar: 'termo de busca']
     padrao_pesquisa = r"\\[pesquisar: '(.*?)'\\]"
@@ -118,12 +117,54 @@ def _carregar_conteudo_arquivo(path):
         print(f"[Erro] Falha ao ler o arquivo {path}: {e}")
         return None
 
-def _perguntar_a_llm_direto(pergunta, contexto_pairs):
+def _perguntar_a_llm_direto(pergunta, contexto_pairs, aprendiz):
+    """
+    Pergunta diretamente à LLM com contexto de arquivos relevantes.
+    """
+    # 1. Busca trechos relevantes usando apenas pergunta e limite
+    trechos_relevantes = aprendiz.buscar_trechos_relevantes(
+        pergunta,
+        limite=10
+    )
+    
+    # 2. Formata o contexto - trechos_relevantes são tuplas (caminho, resumo)
     contexto_fmt = []
-    for path, resumo in contexto_pairs[:MAX_ARQUIVOS_CONTEXT]:
-        conteudo = _carregar_conteudo_arquivo(path)
-        if conteudo:
-            contexto_fmt.append(f"ARQUIVO: {path}\nCONTEUDO:\n```\n{conteudo}\n```\n---")
+    for caminho, resumo in trechos_relevantes:
+        contexto_fmt.append(f"ARQUIVO: {caminho}\nCONTEÚDO:\n```\n{resumo}\n```\n---")
+
+    contexto_txt = "\n".join(contexto_fmt)
+
+    mensagens = [
+        {"role": "system", "content": PROMPT_SISTEMA},
+        {"role": "user", "content": f"Contexto de referência:\n{contexto_txt}\n\nPergunta:\n{pergunta}"}
+    ]
+    # Buscar memórias similares primeiro
+    emb_pergunta = gerar_embedding(pergunta)
+    memorias_similares = buscar_memoria_por_embedding(emb_pergunta, limite=2)
+    
+    # Adicionar memórias ao contexto se encontradas
+    contexto_memoria = ""
+    if memorias_similares:
+        contexto_memoria = "\n\nMemórias similares:\n"
+        for pergunta_mem, resposta_mem in memorias_similares:
+            contexto_memoria += f"P: {pergunta_mem}\nR: {resposta_mem}\n---\n"
+    
+    """
+    contexto_pairs: Lista de (caminho, resumo) para arquivos potencialmente relevantes.
+    Usamos o aprendiz para buscar os trechos mais relevantes DENTRO desses arquivos.
+    """
+    # 1. Extrai os caminhos dos arquivos do contexto
+    caminhos_relevantes = [caminho for caminho, resumo in contexto_pairs]
+    # Correção: usar apenas os parâmetros corretos
+    trechos_relevantes = aprendiz.buscar_trechos_relevantes(
+        pergunta,
+        limite=10
+    )
+    
+   
+    contexto_fmt = []
+    for caminho, resumo in trechos_relevantes:
+        contexto_fmt.append(f"ARQUIVO: {caminho}\nCONTEÚDO:\n```\n{resumo}\n```\n---")
     contexto_txt = "\n".join(contexto_fmt)
 
     mensagens = [
@@ -135,7 +176,8 @@ def _perguntar_a_llm_direto(pergunta, contexto_pairs):
         messages=mensagens,
         temperature=0
     )
-    return resp.choices[0].message.content
+    return resp.choices[0].message.content, trechos_relevantes
+
 
 
 def _perguntar_a_llm_stream_direto(pergunta, contexto_pairs):
@@ -158,6 +200,8 @@ def _perguntar_a_llm_stream_direto(pergunta, contexto_pairs):
         temperature=0,
         stream=True
     )
+    
+    
 
 def pesquisar_na_web(query: str, num_results: int = 5) -> str:
     """Realiza uma busca na web e retorna um resumo dos resultados."""

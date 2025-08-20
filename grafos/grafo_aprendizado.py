@@ -35,12 +35,16 @@ def criar_grafo_aprendizado():
             estado["resposta"] = "Pergunta vazia."
             return estado
         aprendiz = estado.get("aprendiz")
-        print(f"[DEBUG] Aprendiz: {aprendiz}")  # Adicionado para depuração
+        print(f"[DEBUG] Aprendiz: {aprendiz}")
         pares = estado.get("contexto", [])
         estado["resposta"] = aprendiz.consultar(pergunta) if pares else "Sem contexto relevante encontrado."
         
         # Adicionar registro da fonte da resposta
         estado["fonte"] = aprendiz.registrar_fonte(pergunta, "resumo da pergunta", "linguagem da resposta") 
+        
+        # Corrigir chamada da função de memória
+        aprendiz.registrar_memoria_embedding(pergunta, estado["resposta"])
+    
         return estado
 
     def listar_aprendizado(estado):

@@ -4,8 +4,8 @@ from leitor.leitor_diretorio import ler_diretorio_aprendizado
 from memoria.memoria_sqlite import (
     criar_tabelas, limpar_conhecimento, salvar_conhecimento,
     buscar_por_embedding, obter_conhecimento, obter_estatisticas_por_linguagem,
-    obter_todos_arquivos, obter_todas_fontes, salvar_fonte
-
+    obter_todos_arquivos, obter_todas_fontes, salvar_fonte,
+    salvar_memoria_embedding, buscar_memoria_por_embedding  # Adicionar imports
 )
 from utils.extrator_codigo import extrair_info_arquivo
 from utils.embeddings import gerar_embedding
@@ -120,10 +120,18 @@ class Aprendiz:
         emb = gerar_embedding(pergunta)
         pares = buscar_por_embedding(emb, limite=limite)
         return pares
+    
+    def buscar_trechos_relevantes(self, pergunta: str, limite=15):
+        """
+        Retorna trechos relevantes da documentação com base na pergunta.
+        """
+        contexto = self.buscar_contexto_relevante(pergunta, limite=limite)
+        return contexto
+
 
     def consultar(self, pergunta: str):
         contexto = self.buscar_contexto_relevante(pergunta, limite=12)
-        return executar_pergunta_com_ferramentas(pergunta, contexto)
+        return executar_pergunta_com_ferramentas(pergunta, contexto, aprendiz=self)
 
     def debug_listar_sample(self, n=5):
         return obter_conhecimento(n)
@@ -154,7 +162,14 @@ class Aprendiz:
         # Adicione lógica para salvar no banco de dados se necessário.
 
 
-    
-    
+    def registrar_memoria_embedding(self, pergunta: str, resposta: str):
+        """Registra a memória de embedding."""
+        salvar_memoria_embedding(pergunta, resposta)
+        print(f"[Aprendiz] Memória de embedding registrada.")
+
+    def buscar_memorias_similares(self, pergunta: str, limite=3):
+        """Busca memórias similares baseadas na pergunta."""
+        emb = gerar_embedding(pergunta)
+        return buscar_memoria_por_embedding(emb, limite)
 
 
